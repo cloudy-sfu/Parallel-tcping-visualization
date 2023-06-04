@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Ping Visualization</title>
+    <!-- Bootstrap v5.2 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+</head>
+<body>
+
+<div class="d-flex flex-column" style="height: 100vh; overflow-y: auto;">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item dropdown">
+                        <div class="form-floating d-flex">
+                            <input class="form-control" name="table" list="change-host-options" id="change-host"
+                                   autocomplete="off" required>
+                            <label for="change-host">Host</label>
+                            <datalist id="change-host-options" class="dropdown-menu">
+                                {% for host in hosts %}
+                                    <option value="{{ host }}">{{ host }}</option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+                    </li>
+
+                    <li class="nav-item">
+                        <button type="button" class="btn nav-link" data-bs-toggle="modal" data-bs-target="#hintModal">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                                 class="bi bi-info-circle" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738
+                                3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252
+                                1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9
+                                4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                            </svg>
+                        </button>
+                    </li>
+
+                    <li class="nav-item">
+                        <button class="btn nav-link" onclick="view()">View</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn nav-link" onclick="start_all()">Start all</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn nav-link" onclick="stop_all()">Stop all</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn nav-link" onclick="start()">Start</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn nav-link" onclick="stop()">Stop</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn nav-link" onclick="delete_()">Delete</button>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div id="ping-echarts" class="flex-fill"></div>
+    <div id="error-messages" hidden="">
+        <p><b>Something unexpected happens. The technique diagnose information:</b></p>
+        <p id="error-messages-content"></p>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="hintModal" tabindex="-1" aria-labelledby="hintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="hintModalLabel">Hints</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-sm table-striped">
+                    <tbody>
+                    <tr>
+                        <td> View </td>
+                        <td>In the host box:
+                            <ul class="my-0">
+                                <li>Input a new host (domain), or</li>
+                                <li>clear text and select an existed host.</li>
+                            </ul>
+                            It shows all TCPing records of this host in the chart.</td>
+                    </tr>
+                    <tr>
+                        <td class="text-nowrap"> Start all </td>
+                        <td>
+                            It performs TCPing to all these hosts in parallel. <br>
+                            <i>To add a host into list, input or select it and click "view". The dropdown shows all
+                                hosts in the list.</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-nowrap"> Stop all </td>
+                        <td>
+                            It stops TCPing to all hosts listed. <br>
+                            <i>The dropdown shows all hosts in the list.</i>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td> Start </td>
+                        <td> It continuously perform TCPing to the host in the box. </td>
+                    </tr>
+                    <tr>
+                        <td> Stop </td>
+                        <td> It stops TCPing to the host in the box. </td>
+                    </tr>
+                    <tr>
+                        <td> Delete </td>
+                        <td> It deletes the host in the box <b>along with related TCPing records</b>. </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let active_interval = null;
+    let last_fetched_ = {};
+    let ping_time = {};
+    let ping_delays = {};
+    let ping_disconnected = {};
+    const chart_container = document.getElementById('ping-echarts');
+    const chart_height = chart_container.offsetHeight;
+    const chart_width = chart_container.offsetWidth;
+    function generate_options(host) {
+        return {
+            title: {text: host, left: 'center'},
+            tooltip: {trigger: 'axis', axisPointer: {animation: false}},
+            toolbox: {feature: {dataZoom: {yAxisIndex: 'none'}, restore: {}, saveAsImage: {}}},
+            axisPointer: {link: [{xAxisIndex: 'all'}]},
+            dataZoom: [
+                {show: true, realtime: true, start: 0, end: 100, xAxisIndex: [0, 1]},
+                {type: 'inside', realtime: true, start: 0, end: 100, xAxisIndex: [0, 1]}
+            ],
+            grid: [
+                {left: 60, right: 50, height: '60%'},
+                {left: 60, right: 50, top: '80%', height: '10%'}
+            ],
+            xAxis: [
+                {type: 'category', boundaryGap: false, axisLine: {onZero: true}, data: ping_time[host]},
+                {gridIndex: 1, type: 'category', boundaryGap: false, axisLine: {onZero: true},
+                    data: ping_time[host], position: 'top'}
+            ],
+            yAxis: [
+                {name: 'Ping delay (ms)', type: 'value'},
+                {gridIndex: 1, name: 'Timeout', type: 'value', inverse: true, max: 2, interval: 1}
+            ],
+            series: [
+                {name: 'Ping delay (ms)', type: 'line', symbolSize: 8, data: ping_delays[host]},
+                {name: 'Timeout', type: 'scatter', xAxisIndex: 1, yAxisIndex: 1, symbolSize: 8, color: 'red',
+                    edgeShape: 'cross', data: ping_disconnected[host]}
+            ]
+        }
+    }
+    function request_data(host, chart) {
+        $.ajax({
+            type: 'POST',
+            url: '/data',
+            data: {
+                last_fetched: last_fetched_[host],
+                host: host,
+            },
+            success: (response) => {
+                if (response['error']) {
+                    document.getElementById('ping-echarts').setAttribute('hidden', '');
+                    document.getElementById('error-messages').removeAttribute('hidden');
+                    document.getElementById('error-messages-content').innerText = response['error'];
+                } else {
+                    document.getElementById('ping-echarts').removeAttribute('hidden');
+                    document.getElementById('error-messages').setAttribute('hidden', '');
+                    document.getElementById('error-messages-content').innerText = '';
+                }
+                last_fetched_[host] = response['last_fetched'];
+                if (ping_time[host] === undefined) {ping_time[host] = [];}
+                if (ping_delays[host] === undefined) {ping_delays[host] = [];}
+                if (ping_disconnected[host] === undefined) {ping_disconnected[host] = [];}
+                ping_time[host] = Array.prototype.concat(ping_time[host], response['time']);
+                ping_delays[host] = Array.prototype.concat(ping_delays[host], response['delay']);
+                ping_disconnected[host] = Array.prototype.concat(ping_disconnected[host], response['disconnected']);
+                const options = generate_options(host);
+                chart.setOption(options);
+            },
+        });
+    }
+
+    function view() {
+        const host = document.getElementById('change-host').value;
+        clearInterval(active_interval);
+        const chart = echarts.init(chart_container);
+        chart.resize({width: chart_width - 1, height: chart_height - 1});
+        active_interval = setInterval(request_data.bind(null, host, chart), 1000);
+
+        const host_list = document.getElementById('change-host-options');
+        const host_options = Array.from(host_list.options);
+        const host_exists = host_options.some(option => option.value === host);
+        if (!host_exists) {
+            let new_host = document.createElement('option');
+            new_host.value = host;
+            new_host.text = host;
+            host_list.appendChild(new_host);
+        }
+    }
+    function start() {
+        const host = document.getElementById('change-host').value;
+        get_threads(host, 'start');
+        view();
+    }
+    function stop() {
+        const host = document.getElementById('change-host').value;
+        get_threads(host, 'stop');
+        clearInterval(active_interval);
+    }
+    function start_all() {
+        get_threads(null, 'start');
+        const host_list = document.getElementById('change-host-options');
+        if (host_list.options.length > 0) {
+            document.getElementById('change-host').value = host_list.options[0].value;
+            view();
+        }
+    }
+    function stop_all() {
+        get_threads(null, 'stop');
+        clearInterval(active_interval);
+    }
+    function delete_() {
+        const host = document.getElementById('change-host').value;
+        get_threads(host, 'delete');
+
+        const host_list = document.getElementById('change-host-options');
+        const host_options = Array.from(host_list.options);
+        const host_to_delete = host_options.find(option => option.value === host);
+        if (host_to_delete) {
+            host_list.removeChild(host_to_delete);
+        }
+        document.getElementById('change-host').value = '';
+
+        clearInterval(active_interval);
+        const chart = echarts.init(chart_container);
+        chart.resize({width: chart_width - 1, height: chart_height - 1});
+        chart.setOption(generate_options(''));
+    }
+
+    function get_threads(host, action) {
+        $.ajax({
+            type: 'POST',
+            url: '/threads',
+            data: {
+                host: host,
+                action: action,
+            },
+            success: (response) => {
+                if (response['error']) {
+                    document.getElementById('ping-echarts').setAttribute('hidden', '');
+                    document.getElementById('error-messages').removeAttribute('hidden');
+                    document.getElementById('error-messages-content').innerText = response['error'];
+                } else {
+                    document.getElementById('ping-echarts').removeAttribute('hidden');
+                    document.getElementById('error-messages').setAttribute('hidden', '');
+                    document.getElementById('error-messages-content').innerText = '';
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

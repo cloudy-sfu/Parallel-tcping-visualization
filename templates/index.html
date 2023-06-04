@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        .btn-bd-primary {
+            --bs-btn-font-weight: 600;
+            --bs-btn-color: #20254c;  /* color map reference https://zhuanlan.zhihu.com/p/601170660 */
+            --bs-btn-bg: #ecedea;
+            --bs-btn-hover-bg: #9eb2d2;
+            --bs-btn-active-bg: #424d89;
+            --bs-btn-border-color: var(--bs-btn-bg);
+            --bs-btn-hover-color: var(--bs-btn-color);
+            --bs-btn-hover-border-color: var(--bs-btn-hover-bg);
+            --bs-btn-focus-shadow-rgb: var(--bs-btn-bg);
+            --bs-btn-active-color: var(--bs-btn-hover-color);
+            --bs-btn-active-border-color: var(--bs-btn-active-bg);
+        }
+        .padding-lv-2 {
+            padding: calc(var(--bs-dropdown-item-padding-y) * 2) calc(var(--bs-dropdown-item-padding-x) * 2);
+        }
+        .padding-lv-3 {
+            padding: calc(var(--bs-dropdown-item-padding-y) * 3) calc(var(--bs-dropdown-item-padding-x) * 3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex" style="width: 100%;">
+    <div class="d-flex flex-column float-start" style="height: 100vh; overflow-y: auto;">
+        <button class="btn btn-bd-primary m-2"
+                type="button" data-bs-toggle="offcanvas" data-bs-target="#table-of-content" aria-controls="table-of-content"
+                aria-label="Toggle navigation">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrow-repeat"
+                 viewBox="0 0 16 16">
+                <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1
+                .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1
+                13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002
+                0 0 1 2.083 9H3.1z"/>
+            </svg>
+        </button>
+    </div>
+
+    <iframe id="article" class="flex-fill" style="height: 100vh;" src="/task"></iframe>
+</div>
+
+<div class="offcanvas offcanvas-start d-flex flex-column justify-content-between"
+     tabindex="-1" id="table-of-content" aria-labelledby="table-of-content-label">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="table-of-content-label">Task</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body flex-fill">
+        <p>Choose one existed or create a new table to store TCPing records.</p>
+        <p>
+            <b>Leave blank and submit:</b> <br>
+            Close the current task. <br>
+            <i>It will stop performing TCPing to all hosts.</i>
+        </p>
+        <p>
+            <b>Input a new name:</b> <br>
+            Create a new task. <br>
+            <i>It should be a valid name of the SQLite3 table.</i>
+        </p>
+        <p>
+            <b>Clear text and select an existed name:</b> <br>
+            View the records of an existed task. <br>
+            <i>All existed tasks are listed in the dropdown.</i>
+        </p>
+        <form action="/choose-task" method="post">
+            <div class="form-floating">
+                <input class="form-control" name="table" list="choose-task-options"
+                       id="choose-task" autocomplete="off">
+                <label for="choose-task">Task</label>
+                <datalist id="choose-task-options">
+                    {% for p in pools %}
+                        <option value="{{ p }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="text-center m-2">
+                <input class="btn btn-bd-primary" type="submit">
+            </div>
+        </form>
+    </div>
+    <div class="m-2">
+        <hr class="border-2">
+        <p class="text-secondary">Powered by
+            <a href="https://github.com/cloudy-sfu" style="text-decoration: none;" target="_blank">
+                cloudy-sfu
+            </a>
+            , 2023.
+        </p>
+    </div>
+</div>
+
+</body>
+</html>
