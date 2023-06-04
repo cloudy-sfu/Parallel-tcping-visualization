@@ -206,30 +206,30 @@ def control_threads():
         return jsonify({'error': 'The data table isn\'t assigned, please choose the data table.'})
     host = request.form.get('host')
     action = request.form.get('action')
-    match action:
-        case 'start':
-            if host:
-                task.start(host)
-            else:
-                for host in task.threads.keys():
-                    task.start(host)
-        case 'stop':
-            if host:
-                task.stop(host)
-            else:
-                for host in task.threads.keys():
-                    task.stop(host)
-        case 'delete':
-            if host:
-                task.stop(host)
-                del task.threads[host]
-                connection = sqlite3.connect(task.db_path)
-                c = connection.cursor()
-                c.execute(f"DELETE FROM {task.task_name} WHERE hostname = ?", (host,))
-                connection.commit()
-                c.close()
-        case _:
-            pass
+    if action == 'start':
+        if host:
+            task.start(host)
+        else:
+            for host in task.threads.keys():
+                task.start(host)   
+    elif action == 'stop':
+        if host:
+            task.stop(host)
+        else:
+            for host in task.threads.keys():
+                task.stop(host)   
+    elif action == 'delete': 
+        if host:
+            task.stop(host)
+            del task.threads[host]
+            connection = sqlite3.connect(task.db_path)
+            c = connection.cursor()
+            c.execute(f"DELETE FROM {task.task_name} WHERE hostname = ?", (host,))
+            connection.commit()
+            c.close()  
+    else:
+        pass   
+      
     return ''
 
 
