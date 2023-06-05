@@ -7,7 +7,7 @@
 
 ## Usage
 
-**Deploy:**
+**Deploy from source code:**
 
 1. Set the project root as the current folder in terminal. 
 
@@ -24,6 +24,11 @@ It occupies localhost 5000 port by default.
 
 - [Customize host of Flask application](https://flask.palletsprojects.com/en/2.3.x/quickstart/)
 - [Customize port of Flask application](https://flask.palletsprojects.com/en/2.3.x/server/#address-already-in-use)
+
+**Deploy from release:**
+
+1. Unzip and start `parallel_ping_visualization.exe`.
+2. Visit https://localhost:5000
 
 **Use:**
 
