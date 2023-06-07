@@ -8,6 +8,7 @@ import re
 import pytz
 import socket
 import time
+import webbrowser
 
 
 class TCPing(Thread):
@@ -234,4 +235,5 @@ def control_threads():
 
 
 if __name__ == '__main__':
+    webbrowser.open_new_tab('http://localhost:5000')
     app.run()
